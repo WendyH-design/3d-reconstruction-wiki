@@ -1,0 +1,356 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" width="100%" height="100%">
+<defs>
+
+    <style>
+        .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-weight: 700; fill: #0f172a; }
+        .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 13.5px; fill: #475569; }
+        .phase-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 15px; font-weight: 700; fill: #1e293b; }
+        .node-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 13.5px; font-weight: 700; }
+        .node-desc { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 11px; fill: #475569; }
+        .gate-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 13px; font-weight: 700; fill: #92400e; }
+        .gate-desc { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 11px; fill: #b45309; }
+        .badge-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 10px; font-weight: 700; }
+        .legend-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif; font-size: 11.5px; fill: #334155; }
+    </style>
+    
+
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#64748b" />
+    </marker>
+    <marker id="arrow-gate" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#d97706" />
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#dc2626" />
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#059669" />
+    </marker>
+    <filter id="shadow" x="-3%" y="-3%" width="106%" height="108%">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.05"/>
+    </filter>
+    <filter id="shadow-card" x="-2%" y="-1%" width="104%" height="103%">
+        <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.04"/>
+    </filter>
+    
+</defs>
+<rect width="1200" height="1800" fill="#f8fafc" />
+
+    <g transform="translate(60, 24)">
+        <rect width="1080" height="74" rx="8" fill="#ffffff" stroke="#e2e8f0" filter="url(#shadow-card)" />
+        <rect width="6" height="74" rx="3" fill="#2563eb" />
+        <text x="24" y="32" class="title" font-size="20">3D 重建與品質評估 LLM Wiki：系統工作流程 Loop / Graph 全貌</text>
+        <text x="24" y="56" class="subtitle">端到端單向流動（PDF → Evidence → Wiki → Source Map → Slides）、6篇論文逐篇迭代、Gate 人工決策與 Targeted Rollback 閉環</text>
+    </g>
+    
+
+        <g transform="translate(60, 120)">
+            <rect width="1080" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#shadow-card)" />
+            <rect x="0" y="0" width="1080" height="36" rx="10" fill="#f8fafc" />
+            <rect x="0" y="26" width="1080" height="10" fill="#f8fafc" />
+            <line x1="0" y1="36" x2="1080" y2="36" stroke="#e2e8f0" stroke-width="1" />
+            <rect x="14" y="9" width="62" height="18" rx="4" fill="#3b82f6" />
+            <text x="45" y="22" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">Phase 1</text>
+            <text x="86" y="23" class="phase-title">第一階段：規範建立與環境奠基</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="180" width="280" height="75" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6" />
+            <text x="235.0" y="200" class="node-title" fill="#065f46" text-anchor="middle">專案啟動（Start）</text><text x="235.0" y="216" class="node-desc" fill="#047857" text-anchor="middle">定義主題：從照片到可信任 3D</text><text x="235.0" y="232" class="node-desc" fill="#047857" text-anchor="middle">鎖定讀者 Persona：零基礎跨領域</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="445" y="180" width="310" height="75" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8" />
+            <text x="600.0" y="202" class="gate-title" text-anchor="middle">Gate 1: 核定文獻清單</text><text x="600.0" y="218" class="gate-desc" text-anchor="middle">核定初始候選 8 篇核心 + 1 篇補充</text><text x="600.0" y="234" class="gate-desc" text-anchor="middle">確立「合法全文、客觀引用」邊界</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="180" width="285" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="967.5" y="202" class="node-title" fill="#1e3a8a" text-anchor="middle">環境奠基與治理架構</text><text x="967.5" y="219" class="node-desc" text-anchor="middle">建立目錄結構 (raw, evidence, wiki, slides)</text><text x="967.5" y="236" class="node-desc" text-anchor="middle">撰寫 AGENTS.md 執行手冊與 .gitignore</text>
+        </g>
+        
+<line x1="375" y1="217.5" x2="443" y2="217.5" stroke="#64748b" stroke-width="1.6" marker-end="url(#arrow-gray)" />
+<line x1="755" y1="217.5" x2="823" y2="217.5" stroke="#d97706" stroke-width="1.6" marker-end="url(#arrow-gate)" />
+
+        <g>
+            <rect x="768.0" y="188.0" width="42" height="16" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1" />
+            <text x="789" y="199.5" class="badge-text" fill="#92400e" text-anchor="middle">核准</text>
+        </g>
+        
+<path d="M 967 255 L 967 295 L 678 295" fill="none" stroke="#64748b" stroke-width="1.6" stroke-dasharray="5,3" />
+
+        <g>
+            <rect x="525.0" y="285.0" width="150" height="20" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+            <text x="600" y="298.5" class="badge-text" fill="#475569" text-anchor="middle">啟動單篇循環 (逐篇 Ingest)</text>
+        </g>
+        
+<path d="M 522 295 L 235 295 L 235 373" fill="none" stroke="#64748b" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow-gray)" />
+
+        <g transform="translate(60, 330)">
+            <rect width="1080" height="515" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#shadow-card)" />
+            <rect x="0" y="0" width="1080" height="36" rx="10" fill="#f8fafc" />
+            <rect x="0" y="26" width="1080" height="10" fill="#f8fafc" />
+            <line x1="0" y1="36" x2="1080" y2="36" stroke="#e2e8f0" stroke-width="1" />
+            <rect x="14" y="9" width="62" height="18" rx="4" fill="#2563eb" />
+            <text x="45" y="22" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">Phase 2</text>
+            <text x="86" y="23" class="phase-title">第二階段：論文 Ingest 迭代迴圈（6 篇逐篇單循環，每篇獨立執行 DoD 驗收）</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="380" width="280" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="235.0" y="402" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 1: 來源與元資料核驗</text><text x="235.0" y="419" class="node-desc" text-anchor="middle">核對官方 DOI, 作者名單, 年份</text><text x="235.0" y="436" class="node-desc" text-anchor="middle">確認 ACM / IEEE / CVF 官方狀態</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="460" y="380" width="280" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="600.0" y="402" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 2: 保存 raw/ PDF</text><text x="600.0" y="419" class="node-desc" text-anchor="middle">合法取得原始全文 PDF 於本地</text><text x="600.0" y="436" class="node-desc" text-anchor="middle">記錄取得日期，排入 .gitignore</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="380" width="285" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="967.5" y="402" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 3: 結構化深度閱讀</text><text x="967.5" y="419" class="node-desc" text-anchor="middle">萃取核心公式、實驗設定與硬體條件</text><text x="967.5" y="436" class="node-desc" text-anchor="middle">辨析特殊表格欄位 (如 Mem) 與限制</text>
+        </g>
+        
+<line x1="375" y1="417.5" x2="458" y2="417.5" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<line x1="740" y1="417.5" x2="823" y2="417.5" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="505" width="285" height="75" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8" />
+            <text x="967.5" y="527" class="gate-title" text-anchor="middle">Gate 2: 方案審查 (Human-in-Loop)</text><text x="967.5" y="543" class="gate-desc" text-anchor="middle">提報閱讀摘要與預計更新頁面清單</text><text x="967.5" y="559" class="gate-desc" text-anchor="middle">由人類審查演算法理解與公式定義</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="460" y="505" width="280" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="600.0" y="527" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 4: 產出 Evidence Card</text><text x="600.0" y="544" class="node-desc" text-anchor="middle">建立 evidence/*.md 結構化證據卡</text><text x="600.0" y="561" class="node-desc" text-anchor="middle">精確標註 PDF/印刷頁碼、圖表編號</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="505" width="280" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="235.0" y="527" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 5: 整合更新 Wiki 概念頁</text><text x="235.0" y="544" class="node-desc" text-anchor="middle">合成知識至 wiki/*.md 概念主題庫</text><text x="235.0" y="561" class="node-desc" text-anchor="middle">維護全站雙向超連結與 glossary.md</text>
+        </g>
+        
+<line x1="967" y1="455" x2="967" y2="503" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<path d="M 1110 542.5 L 1125 542.5 L 1125 496" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="4,3" />
+
+        <g>
+            <rect x="1077.0" y="467.0" width="96" height="26" rx="4" fill="#fef2f2" stroke="#fecaca" stroke-width="1" />
+            <text x="1125" y="483.5" class="badge-text" fill="#b91c1c" text-anchor="middle">Gate 2 退回：理解偏差</text>
+        </g>
+        
+<path d="M 1125 464 L 1125 417.5 L 1112 417.5" fill="none" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-red)" />
+<line x1="825" y1="542.5" x2="742" y2="542.5" stroke="#d97706" stroke-width="1.6" marker-end="url(#arrow-gate)" />
+
+        <g>
+            <rect x="756.0" y="515.0" width="52" height="16" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1" />
+            <text x="782" y="526.5" class="badge-text" fill="#92400e" text-anchor="middle">核准通過</text>
+        </g>
+        
+<line x1="460" y1="542.5" x2="377" y2="542.5" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="630" width="280" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="235.0" y="652" class="node-title" fill="#1e3a8a" text-anchor="middle">Step 6: DoD 驗收與登錄</text><text x="235.0" y="669" class="node-desc" text-anchor="middle">查核 7 大完成準則 (Definition of Done)</text><text x="235.0" y="686" class="node-desc" text-anchor="middle">更新 wiki/ingest-log.md 處理狀態</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="460" y="630" width="280" height="75" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8" />
+            <text x="600.0" y="652" class="gate-title" text-anchor="middle">完備性查核 (Loop Decision)</text><text x="600.0" y="668" class="gate-desc" text-anchor="middle">評估核心知識庫是否已足以支撐簡報</text><text x="600.0" y="684" class="gate-desc" text-anchor="middle">6篇完成 (P1,P2,P3,P6,P7,P8) / P4,P5暫緩</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="630" width="285" height="75" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="967.5" y="652" class="node-title" fill="#1e3a8a" text-anchor="middle">知識缺口評估結果</text><text x="967.5" y="669" class="node-desc" text-anchor="middle">確認 6 篇文獻覆蓋率 100%</text><text x="967.5" y="686" class="node-desc" text-anchor="middle">決策停止 P9 Ingest，終止迭代</text>
+        </g>
+        
+<line x1="235" y1="580" x2="235" y2="628" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<line x1="375" y1="667.5" x2="458" y2="667.5" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<path d="M 600 705 L 600 750 L 440 750" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="5,3" />
+
+        <g>
+            <rect x="252.5" y="739.0" width="185" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1" />
+            <text x="345" y="753.5" class="badge-text" fill="#1d4ed8" text-anchor="middle">未滿 6 篇 ➔ 啟動下一篇 Ingest 迴圈</text>
+        </g>
+        
+<path d="M 250 750 L 78 750 L 78 417.5 L 93 417.5" fill="none" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#arrow-blue)" />
+<line x1="740" y1="667.5" x2="823" y2="667.5" stroke="#059669" stroke-width="1.6" marker-end="url(#arrow-green)" />
+
+        <g>
+            <rect x="763.0" y="640.0" width="38" height="16" rx="4" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+            <text x="782" y="651.5" class="badge-text" fill="#047857" text-anchor="middle">已滿</text>
+        </g>
+        
+<path d="M 967 705 L 967 800 L 760 800" fill="none" stroke="#059669" stroke-width="1.8" />
+
+        <g>
+            <rect x="525.0" y="789.0" width="230" height="22" rx="4" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+            <text x="640" y="803.5" class="badge-text" fill="#047857" text-anchor="middle">知識儲備充足 ➔ 終止 Ingest 進入簡報映射</text>
+        </g>
+        
+<path d="M 520 800 L 325 800 L 325 918" fill="none" stroke="#059669" stroke-width="1.8" marker-end="url(#arrow-green)" />
+
+        <g transform="translate(60, 870)">
+            <rect width="1080" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#shadow-card)" />
+            <rect x="0" y="0" width="1080" height="36" rx="10" fill="#f8fafc" />
+            <rect x="0" y="26" width="1080" height="10" fill="#f8fafc" />
+            <line x1="0" y1="36" x2="1080" y2="36" stroke="#e2e8f0" stroke-width="1" />
+            <rect x="14" y="9" width="62" height="18" rx="4" fill="#059669" />
+            <text x="45" y="22" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">Phase 3</text>
+            <text x="86" y="23" class="phase-title">第三階段：知識庫總成與教學映射</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="925" width="460" height="90" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="325.0" y="947" class="node-title" fill="#1e3a8a" text-anchor="middle">教學大綱與 slide_source_map.md 規劃</text><text x="325.0" y="964" class="node-desc" text-anchor="middle">以終為始規劃 12 頁教學投影片主題與節奏</text><text x="325.0" y="981" class="node-desc" text-anchor="middle">建立每頁對照 Wiki 章節與 Evidence 頁碼之映射表</text><text x="325.0" y="998" class="node-desc" text-anchor="middle">嚴格標註「原始論文結論」vs.「專案延伸推論」</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="650" y="925" width="460" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8" />
+            <text x="880.0" y="947" class="gate-title" text-anchor="middle">Gate 5: 教學架構審查 (Human-in-Loop)</text><text x="880.0" y="963" class="gate-desc" text-anchor="middle">由使用者人工審查 12 頁教學大綱與來源映射</text><text x="880.0" y="979" class="gate-desc" text-anchor="middle">核准進入前端開發，不再追加無效文獻</text><text x="880.0" y="995" class="gate-desc" text-anchor="middle">鎖定 100% 來源映射覆蓋率（無來源不得進入簡報）</text>
+        </g>
+        
+<line x1="555" y1="970" x2="648" y2="970" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<path d="M 880 1015 L 880 1090 L 665 1090" fill="none" stroke="#d97706" stroke-width="1.8" />
+
+        <g>
+            <rect x="460.0" y="1079.0" width="200" height="22" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1" />
+            <text x="560" y="1093.5" class="badge-text" fill="#92400e" text-anchor="middle">Gate 5 核准 ➔ 進入前端簡報開發</text>
+        </g>
+        
+<path d="M 455 1090 L 235 1090 L 235 1198" fill="none" stroke="#d97706" stroke-width="1.8" marker-end="url(#arrow-gate)" />
+
+        <g transform="translate(60, 1125)">
+            <rect width="1080" height="515" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="6,4" filter="url(#shadow-card)" />
+            <rect x="0" y="0" width="1080" height="36" rx="10" fill="#f8fafc" />
+            <rect x="0" y="26" width="1080" height="10" fill="#f8fafc" />
+            <line x1="0" y1="36" x2="1080" y2="36" stroke="#e2e8f0" stroke-width="1" />
+            <rect x="14" y="9" width="62" height="18" rx="4" fill="#7c3aed" />
+            <text x="45" y="22" font-family="-apple-system, sans-serif" font-size="10.5" font-weight="700" fill="#ffffff" text-anchor="middle">Phase 4</text>
+            <text x="86" y="23" class="phase-title">第四階段：HTML 簡報開發、多層驗證與驗收閉環</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="1205" width="280" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="235.0" y="1227" class="node-title" fill="#1e3a8a" text-anchor="middle">單檔 HTML 簡報建置</text><text x="235.0" y="1244" class="node-desc" text-anchor="middle">生成 slides/index.html (Single-file HTML)</text><text x="235.0" y="1261" class="node-desc" text-anchor="middle">純原生 HTML5/CSS3/Vanilla JS，零 CDN 相依</text><text x="235.0" y="1278" class="node-desc" text-anchor="middle">實作淺色主題、鍵盤導覽、模擬器與來源抽屜</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="460" y="1205" width="280" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="600.0" y="1227" class="node-title" fill="#1e3a8a" text-anchor="middle">自動化品質查核 (Auto QA)</text><text x="600.0" y="1244" class="node-desc" text-anchor="middle">標籤閉合平衡 (section 12/12, div 233/233)</text><text x="600.0" y="1261" class="node-desc" text-anchor="middle">JS 括號對稱性與 0 重複 ID 檢驗</text><text x="600.0" y="1278" class="node-desc" text-anchor="middle">全站禁用詞檢索與 17 個本機相對路徑存在性</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="1205" width="285" height="80" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.8" />
+            <text x="967.5" y="1227" class="gate-title" text-anchor="middle">Gate 6: 人工操作驗收 (Chrome)</text><text x="967.5" y="1243" class="gate-desc" text-anchor="middle">使用者在真實 Chrome 瀏覽器親自操作體驗</text><text x="967.5" y="1259" class="gate-desc" text-anchor="middle">驗收鍵盤事件、目錄跳轉、標籤切換與測驗判斷</text><text x="967.5" y="1275" class="gate-desc" text-anchor="middle">審查文字精確度 (如 Mem 定義、決策樹 wording)</text>
+        </g>
+        
+<line x1="375" y1="1245" x2="458" y2="1245" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<line x1="740" y1="1245" x2="823" y2="1245" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<path d="M 600 1205 L 600 1180 L 460 1180" fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="4,3" />
+
+        <g>
+            <rect x="375.0" y="1171.0" width="80" height="18" rx="4" fill="#fef2f2" stroke="#fecaca" stroke-width="1" />
+            <text x="415" y="1183.5" class="badge-text" fill="#b91c1c" text-anchor="middle">語法未通過</text>
+        </g>
+        
+<path d="M 370 1180 L 235 1180 L 235 1203" fill="none" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arrow-red)" />
+
+        <g filter="url(#shadow)">
+            <rect x="825" y="1355" width="285" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="967.5" y="1377" class="node-title" fill="#1e3a8a" text-anchor="middle">局部精準修訂 (Patching Loop)</text><text x="967.5" y="1394" class="node-desc" text-anchor="middle">嚴禁重新生成整份檔案，實施精確局部抽換</text><text x="967.5" y="1411" class="node-desc" text-anchor="middle">修正 Slide 12 決策樹 (工業製造)、清理標籤</text><text x="967.5" y="1428" class="node-desc" text-anchor="middle">修正 Slide 11 標題、統一「自動美化」</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="460" y="1355" width="280" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.4" />
+            <text x="600.0" y="1377" class="node-title" fill="#1e3a8a" text-anchor="middle">重新執行自動化檢驗</text><text x="600.0" y="1394" class="node-desc" text-anchor="middle">局部修訂後即刻執行 PowerShell 自動化回檢</text><text x="600.0" y="1411" class="node-desc" text-anchor="middle">確認無 DOM 結構破壞、無殘留禁用詞</text><text x="600.0" y="1428" class="node-desc" text-anchor="middle">回報具體檢驗數據至驗收紀錄</text>
+        </g>
+        
+
+        <g filter="url(#shadow)">
+            <rect x="95" y="1355" width="280" height="80" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.6" />
+            <text x="235.0" y="1375" class="node-title" fill="#065f46" text-anchor="middle">專案成果正式交付 (Done)</text><text x="235.0" y="1391" class="node-desc" fill="#047857" text-anchor="middle">可信任 3D 重建與品質評估 LLM Wiki</text><text x="235.0" y="1407" class="node-desc" fill="#047857" text-anchor="middle">單檔教學簡報 (slides/index.html) 通過 Gate 6</text><text x="235.0" y="1423" class="node-desc" fill="#047857" text-anchor="middle">交付來源映射表、執行反思報告與架構圖</text>
+        </g>
+        
+<line x1="930" y1="1285" x2="930" y2="1353" stroke="#dc2626" stroke-width="1.6" marker-end="url(#arrow-red)" />
+
+        <g>
+            <rect x="960.0" y="1309.0" width="130" height="20" rx="4" fill="#fef2f2" stroke="#fecaca" stroke-width="1" />
+            <text x="1025" y="1322.5" class="badge-text" fill="#b91c1c" text-anchor="middle">Gate 6 提報局部修正</text>
+        </g>
+        
+<line x1="825" y1="1395" x2="742" y2="1395" stroke="#2563eb" stroke-width="1.6" marker-end="url(#arrow-blue)" />
+<path d="M 600 1355 L 600 1320 L 650 1320" fill="none" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4,3" />
+
+        <g>
+            <rect x="655.0" y="1311.0" width="90" height="18" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+            <text x="700" y="1323.5" class="badge-text" fill="#475569" text-anchor="middle">回檢通過覆核</text>
+        </g>
+        
+<path d="M 750 1320 L 795 1320 L 795 1270 L 823 1270" fill="none" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#arrow-gray)" />
+<path d="M 850 1435 L 850 1480 L 635 1480" fill="none" stroke="#059669" stroke-width="2.2" />
+
+        <g>
+            <rect x="450.0" y="1468.0" width="180" height="24" rx="4" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1" />
+            <text x="540" y="1483.5" class="badge-text" fill="#047857" text-anchor="middle">Gate 6 驗收通過 (PASS)</text>
+        </g>
+        
+<path d="M 445 1480 L 235 1480 L 235 1437" fill="none" stroke="#059669" stroke-width="2.2" marker-end="url(#arrow-green)" />
+<path d="M 650 1000 L 515 1000" fill="none" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="6,4" />
+
+        <g>
+            <rect x="172.5" y="989.0" width="335" height="22" rx="4" fill="#fef2f2" stroke="#fecaca" stroke-width="1" />
+            <text x="340" y="1003.5" class="badge-text" fill="#b91c1c" text-anchor="middle">Targeted Rollback: Gate 5 發現概念缺漏 ➔ 退回 Step 5 補齊 Wiki</text>
+        </g>
+        
+<path d="M 165 1000 L 35 1000 L 35 542.5 L 93 542.5" fill="none" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow-red)" />
+
+    <g transform="translate(60, 1665)">
+        <rect width="1080" height="90" rx="8" fill="#ffffff" stroke="#e2e8f0" filter="url(#shadow-card)" />
+        <text x="24" y="25" font-family="-apple-system, sans-serif" font-size="12" font-weight="700" fill="#1e293b">圖例說明（Legend &amp; Governance Mechanisms）：</text>
+        
+        <g transform="translate(24, 42)">
+            <!-- Process -->
+            <rect x="0" y="0" width="22" height="14" rx="3" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.2"/>
+            <text x="30" y="11" class="legend-text">循序處理節點（Process）</text>
+
+            <!-- Gate -->
+            <rect x="190" y="0" width="22" height="14" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+            <text x="220" y="11" class="legend-text">人工查核關卡（Human-in-the-Loop）</text>
+
+            <!-- Milestone -->
+            <rect x="440" y="0" width="22" height="14" rx="5" fill="#ecfdf5" stroke="#10b981" stroke-width="1.3"/>
+            <text x="470" y="11" class="legend-text">啟動 / 成果交付（Milestone）</text>
+
+            <!-- Regular Loop -->
+            <line x1="680" y1="7" x2="710" y2="7" stroke="#2563eb" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#arrow-blue)"/>
+            <text x="720" y="11" class="legend-text">迭代推進迴圈（Iteration Loop）</text>
+
+            <!-- Rollback -->
+            <line x1="910" y1="7" x2="940" y2="7" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+            <text x="950" y="11" class="legend-text" fill="#b91c1c">分層退回路由（Targeted Rollback）</text>
+        </g>
+        
+        <text x="24" y="75" font-family="-apple-system, sans-serif" font-size="10.5" fill="#64748b">
+            核心設計準則：1. 單一事實來源（SSOT 閉環） 2. 逐篇 DoD 嚴格驗收 3. 人工決策關鍵防護（Gate 1, 2, 5, 6） 4. 精確局部修訂（拒絕全盤重推）
+        </text>
+    </g>
+    
+</svg>

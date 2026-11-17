@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>從照片到可信任的 3D 模型：3D 重建技術與品質評估入門</title>
+  <style>
+    /* ==========================================================================
+       1. 全域樣式與色彩變數（明亮清爽、高對比現代教學主題）
+       ========================================================================== */
+    :root {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-light: #64748b;
+      --border-color: #cbd5e1;
+      --border-light: #e2e8f0;
+      
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --secondary: #0891b2;
+      --secondary-light: #ecfeff;
+      --accent: #8b5cf6;
+      --accent-light: #f5f3ff;
+      
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* 頂部進度條 */
+    #progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background-color: #e2e8f0;
+      z-index: 1000;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 8.33%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.3s ease;
+    }
+
+    /* 頂部控制面板與標題列 */
+    header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-light);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 5px;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .project-badge {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 7px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-card-alt);
+      border-color: var(--text-light);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* 投影片主容器 */
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 20px 80px 20px;
+    }
+
+    .slide-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 投影片標題與結構 */
+    .slide-header {
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .slide-subtitle {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .slide-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .slide-tag {
+      background-color: var(--bg-card-alt);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+
+    .slide-body {
+      font-size: 1.05rem;
+      color: var(--text-main);
+    }
+
+    /* 響應式網格與排版元件 */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 20px 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-color);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-highlight {
+      background-color: var(--primary-light);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+
+    .card-warning {
+      background-color: var(--warning-light);
+      border-color: rgba(217, 119, 6, 0.3);
+    }
+
+    .card-success {
+      background-color: var(--success-light);
+      border-color: rgba(5, 150, 105, 0.3);
+    }
+
+    .card-danger {
+      background-color: var(--danger-light);
+      border-color: rgba(220, 38, 38, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card p {
+      font-size: 0.96rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 提醒框 Alert Callouts */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background-color: var(--primary-light);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 18px 0;
+      font-size: 0.95rem;
+    }
+
+    .callout-warning {
+      border-left-color: var(--warning);
+      background-color: var(--warning-light);
+    }
+
+    .callout-danger {
+      border-left-color: var(--danger);
+      background-color: var(--danger-light);
+    }
+
+    .callout-success {
+      border-left-color: var(--success);
+      background-color: var(--success-light);
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 數學公式呈現元件（零相依純手寫） */
+    .math-block {
+      background-color: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      margin: 14px 0;
+      text-align: center;
+      font-family: "Cambria Math", "Times New Roman", serif;
+      font-size: 1.15rem;
+      color: #1e293b;
+      overflow-x: auto;
+    }
+
+    .math-inline {
+      font-family: "Cambria Math", "Times New Roman", serif;
+      font-size: 1.05rem;
+      color: var(--primary);
+      padding: 0 2px;
+    }
+
+    /* 圖表與視覺化容器 */
+    .visual-box {
+      background-color: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visual-box svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .visual-caption {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* 資料來源折疊抽屜（Source Drawer） */
+    .source-drawer {
+      margin-top: 32px;
+      border-top: 1px dashed var(--border-color);
+      padding-top: 16px;
+    }
+
+    .source-toggle {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+      background: none;
+      border: none;
+      padding: 4px 0;
+    }
+
+    .source-toggle:hover {
+      text-decoration: underline;
+    }
+
+    .source-content {
+      display: none;
+      background-color: var(--bg-card-alt);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .source-content.open {
+      display: block;
+    }
+
+    .tag-academic {
+      display: inline-block;
+      background-color: #e0f2fe;
+      color: #0369a1;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      margin-right: 6px;
+    }
+
+    .tag-extension {
+      display: inline-block;
+      background-color: #fef3c7;
+      color: #92400e;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      margin-right: 6px;
+    }
+
+    /* 互動控制項（Tabs, Toggle Buttons） */
+    .interactive-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background-color: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background-color: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    /* 隨堂測驗專用樣式 */
+    .quiz-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .quiz-question {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 14px;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quiz-option {
+      background-color: var(--bg-card-alt);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-option:hover {
+      background-color: #e2e8f0;
+      border-color: var(--border-color);
+    }
+
+    .quiz-option.correct {
+      background-color: var(--success-light);
+      border-color: var(--success);
+      color: #065f46;
+      font-weight: 700;
+    }
+
+    .quiz-option.wrong {
+      background-color: var(--danger-light);
+      border-color: var(--danger);
+      color: #991b1b;
+      font-weight: 700;
+    }
+
+    .quiz-feedback {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .quiz-feedback.show {
+      display: block;
+    }
+
+    /* 底部導覽列 */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: var(--bg-card);
+      border-top: 1px solid var(--border-light);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgb(0 0 0 / 0.05);
+    }
+
+    .footer-info {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* 目錄 Modal (TOC) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 650px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .toc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toc-item {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toc-item:hover {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .toc-item.current {
+      background-color: var(--primary-light);
+      border-color: var(--primary);
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* 響應式適配 */
+    @media (max-width: 768px) {
+      .slide {
+        padding: 24px 18px;
+      }
+      .slide-title {
+        font-size: 1.45rem;
+      }
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      header {
+        padding: 10px 16px;
+      }
+      .header-title {
+        display: none;
+      }
+      footer {
+        padding: 10px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部進度條 -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- 頂部列 -->
+  <header>
+    <div class="header-left">
+      <span class="project-badge">3D Reconstruction Wiki</span>
+      <span class="header-title">從照片到可信任的 3D 模型：技術與品質評估入門</span>
+    </div>
+    <div class="header-right">
+      <button class="btn" id="tocBtn" title="查看目錄">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <span>目錄</span>
+      </button>
+      <button class="btn" id="shortcutHelpBtn" title="鍵盤快速鍵">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"></path></svg>
+        <span>快速鍵</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主內容區（12 頁簡報容器） -->
+  <main>
+    <div class="slide-wrapper">
+
+      <!-- ======================================================================
+           SLIDE 01: 封面與學習地圖
+           ====================================================================== -->
+      <section class="slide active" id="slide-1" data-index="1">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 01 / 12 • 學習導覽</div>
+            <h1 class="slide-title">從照片到可信任的 3D 模型<br><span style="color:var(--primary); font-size:1.5rem;">3D 重建技術與品質評估入門</span></h1>
+          </div>
+          <span class="slide-tag">破題引言</span>
+        </div>
+        <div class="slide-body">
+          <div class="callout">
+            <div class="callout-title">
+              跨領域產品評估者的核心提問
+            </div>
+            在網路上看 3D 展示時，模型看起來<strong>光鮮亮麗、栩栩如生</strong>；但若應用在<strong>二手商品交易或瑕疵檢驗</strong>中，這個模型真的能信任嗎？表面刮痕會不會被演算法「自動美化修掉」？看不到的背面會不會滿是破洞？
+          </div>
+
+          <h3 style="margin: 20px 0 12px 0; font-size:1.15rem;">🧭 全篇 12 頁學習地圖（Roadmap）</h3>
+          <div class="grid-3">
+            <div class="card card-highlight">
+              <div class="card-title">第一：基本概念</div>
+              <p>• 什麼是 3D 重建？</p>
+              <p>• 視差與三角測量原理</p>
+              <p>• SfM 技術 vs. COLMAP 工具</p>
+            </div>
+            <div class="card card-highlight">
+              <div class="card-title">第二：核心演算法</div>
+              <p>• NeRF：連續隱式神經場</p>
+              <p>• 3DGS：顯式高斯與即時渲染</p>
+              <p>• NeRF vs. 3DGS 橫向比對</p>
+            </div>
+            <div class="card card-highlight">
+              <div class="card-title">第三：資料集與品質評估</div>
+              <p>• ABO 與 Tanks and Temples</p>
+              <p>• 2D 視覺品質（PSNR/SSIM/LPIPS）</p>
+              <p>• 3D 幾何品質（Precision/Recall/F-score）</p>
+            </div>
+          </div>
+
+          <div class="card" style="background-color: var(--secondary-light); border-color: rgba(8,145,178,0.2);">
+            <div class="card-title" style="color: var(--secondary);">第四：實務洞察與知識檢核</div>
+            <p style="color: var(--text-main);">
+              • <strong>核心思維</strong>：為什麼「視覺逼真」絕對不等於「形狀正確」？（視線累加假象）<br>
+              • <strong>二手電商檢驗</strong>：0.01% 刮痕稀釋效應、平滑化美容偏見，與本專案提出的雙軌制檢驗框架。<br>
+              • <strong>互動測驗</strong>：3 題觀念即時測驗與評估決策樹。
+            </p>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(1)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-1">
+              <span class="tag-extension">專案引言架構</span>
+              本頁引言提問與學習地圖為本專案針對跨領域初學者所設計之教材導讀框架。概念對應：<a href="../wiki/index.md" target="_blank">wiki/index.md</a>（知識庫核心問題意識與導覽地圖）。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 02: 3D 重建是什麼？
+           ====================================================================== -->
+      <section class="slide" id="slide-2" data-index="2">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 02 / 12 • 幾何基礎</div>
+            <h2 class="slide-title">3D 重建是什麼？從 2D 像素到 3D 空間</h2>
+          </div>
+          <span class="slide-tag">降維投影與任務分流</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            當數位相機拍照時，現實中的三維世界透過鏡頭投影到二維感光元件（Sensor）上。這個過程本質上是一次<strong>「降維投影（Dimensionality Reduction）」</strong>——<strong>沿著視線方向的深度（Depth）資訊完全遺失了</strong>！
+          </p>
+
+          <div class="visual-box">
+            <svg viewBox="0 0 700 180" width="700" height="180">
+              <circle cx="100" cy="90" r="45" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"></circle>
+              <text x="100" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#0369a1">真實 3D 物體</text>
+              <text x="100" y="105" text-anchor="middle" font-size="12" fill="#0369a1">(X, Y, Z)</text>
+              
+              <!-- 光線路徑 -->
+              <line x1="145" y1="90" x2="350" y2="90" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,5"></line>
+              <polygon points="350,85 365,90 350,95" fill="#f59e0b"></polygon>
+              
+              <!-- 2D 照片平面 -->
+              <rect x="380" y="30" width="80" height="120" fill="#f1f5f9" stroke="#64748b" stroke-width="2" rx="4"></rect>
+              <circle cx="420" cy="90" r="25" fill="#bae6fd" stroke="#0284c7" stroke-width="1.5"></circle>
+              <text x="420" y="94" text-anchor="middle" font-size="11" font-weight="bold" fill="#0369a1">2D 影像</text>
+              <text x="420" y="170" text-anchor="middle" font-size="12" fill="#64748b">感光平面 (u, v)</text>
+              
+              <!-- 註解箭頭 -->
+              <path d="M 480 70 L 530 70" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow)"></path>
+              <text x="540" y="75" font-size="13" font-weight="bold" fill="#dc2626">深度遺失！</text>
+              <text x="540" y="95" font-size="12" fill="#475569">單張照片存在無限多種</text>
+              <text x="540" y="112" font-size="12" fill="#475569">大小與距離的組合可能</text>
+            </svg>
+            <div class="visual-caption">概念示意圖：相機拍照為 3D 空間至 2D 平面之透視投影，單一像素無法區分物體距離</div>
+          </div>
+
+          <h3 style="margin: 20px 0 10px 0; font-size:1.15rem;">兩大任務的核心分流（初學者必知消歧義）</h3>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title" style="color: var(--primary);">
+                <span>1. 3D 幾何重建</span>
+                <span style="font-size:0.75rem; font-weight:normal; color:var(--text-light);">(Geometric Reconstruction)</span>
+              </div>
+              <p>• <strong>核心目標</strong>：精準計算物體表面在 3D 空間的幾何坐標與實體表面。</p>
+              <p>• <strong>產出成果</strong>：點雲（Point Cloud）、三角網格（Mesh）或體素（Voxel）。</p>
+              <p>• <strong>實務應用</strong>：工業量測、CAD 建模、機器人夾取、二手刮痕深度檢驗。</p>
+            </div>
+            <div class="card">
+              <div class="card-title" style="color: var(--secondary);">
+                <span>2. 新視角合成</span>
+                <span style="font-size:0.75rem; font-weight:normal; color:var(--text-light);">(Novel View Synthesis, NVS)</span>
+              </div>
+              <p>• <strong>核心目標</strong>：給定一組已知照片，生成「從未拍攝過視角」下的逼真 2D 照片。</p>
+              <p>• <strong>產出成果</strong>：連續平滑的新視角相片或動態影片（NeRF, 3DGS）。</p>
+              <p>• <strong>初學者盲點</strong>：<strong>新視角合成追求的是「照片好看逼真」，不保證背後有精準實體的 3D 網格！</strong></p>
+            </div>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(2)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-2">
+              <span class="tag-academic">原始文獻結論</span>
+              • 新視角合成（NVS）任務定義與視角光線合成目標：Mildenhall et al. (2021), Sec. 1, p. 405；Kerbl et al. (2023), Sec. 1, p. 2。<br>
+              • 證據卡對應：<a href="../evidence/mildenhall2021-nerf.md#2-研究問題與核心技術貢獻" target="_blank">evidence/mildenhall2021-nerf.md</a>、<a href="../evidence/kerbl2023-3dgs.md#21-研究背景與問題意識" target="_blank">evidence/kerbl2023-3dgs.md</a>。<br>
+              • 概念對應：<a href="../wiki/foundations.md#1-核心任務從-2d-照片到-3d-空間" target="_blank">wiki/foundations.md Sec 1</a>、<a href="../wiki/glossary.md" target="_blank">wiki/glossary.md</a>（新視角合成、點雲、網格）。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 03: 為什麼需要多角度？
+           ====================================================================== -->
+      <section class="slide" id="slide-3" data-index="3">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 03 / 12 • 幾何原理</div>
+            <h2 class="slide-title">為什麼需要多視角？視差、三角測量與相機姿態</h2>
+          </div>
+          <span class="slide-tag">空間交會與 SfM</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            單張照片由於深度遺失，無法知道物體的真實空間位置。要找回深度，必須模仿人類雙眼立體視覺，從<strong>兩個以上的不同角度</strong>拍攝同一個物體。
+          </p>
+
+          <div class="grid-2" style="align-items: center;">
+            <div>
+              <div class="card" style="margin-bottom: 14px;">
+                <div class="card-title">1. 視差（Disparity）生活比喻</div>
+                <p>將食指放在眼前 15 公分，閉左眼用右眼看，再換閉右眼用左眼看，會發現手指相對背景劇烈跳動；若將手指移到 1 公尺遠，跳動幅度就變小了。</p>
+                <p><strong>原理</strong>：離相機越近的物體，在不同視角下的像素位移越大；離相機越遠，位移越小。</p>
+              </div>
+
+              <div class="card">
+                <div class="card-title">2. 三角測量（Triangulation）</div>
+                <p>若已知兩台相機在空間中的拍攝位置與角度（相機姿態），從兩張照片中找到同一個表面特徵點，兩條視線光線在 3D 空間的交會點，就是該點真實的 3D 坐標。</p>
+                <p class="math-block" style="font-size:1rem; margin:8px 0;">相機光線：r(t) = o + t · d</p>
+                <p style="font-size:0.85rem; color:var(--text-light);">o 為相機光心位置，d 為穿過像素的單位方向向量，t 為深度前進距離。</p>
+              </div>
+            </div>
+
+            <div class="visual-box">
+              <svg viewBox="0 0 450 300" width="450" height="300">
+                <!-- 物體點 -->
+                <circle cx="225" cy="60" r="10" fill="#dc2626" stroke="#991b1b" stroke-width="2"></circle>
+                <text x="225" y="40" text-anchor="middle" font-size="14" font-weight="bold" fill="#dc2626">物體特徵點 P (X, Y, Z)</text>
+                
+                <!-- 光線 1 -->
+                <line x1="80" y1="230" x2="225" y2="60" stroke="#2563eb" stroke-width="2.5"></line>
+                <!-- 光線 2 -->
+                <line x1="370" y1="230" x2="225" y2="60" stroke="#0891b2" stroke-width="2.5"></line>
+                
+                <!-- 相機 1 -->
+                <rect x="50" y="230" width="60" height="40" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="2"></rect>
+                <text x="80" y="255" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">相機 1 (o₁)</text>
+                
+                <!-- 相機 2 -->
+                <rect x="340" y="230" width="60" height="40" rx="4" fill="#ecfeff" stroke="#0891b2" stroke-width="2"></rect>
+                <text x="370" y="255" text-anchor="middle" font-size="12" font-weight="bold" fill="#0891b2">相機 2 (o₂)</text>
+
+                <!-- 視線夾角 -->
+                <path d="M 200 85 A 35 35 0 0 0 250 85" fill="none" stroke="#f59e0b" stroke-width="2"></path>
+                <text x="225" y="110" text-anchor="middle" font-size="12" font-weight="bold" fill="#d97706">交會視差角</text>
+              </svg>
+              <div class="visual-caption">概念示意圖：兩束相機光線交會進行空間三角測量</div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ 初學者常見混淆：SfM 是技術方法，COLMAP 是軟體工具！</div>
+            • <strong>運動恢復結構（Structure-from-Motion, SfM）</strong>：是一種<strong>電腦視覺技術框架</strong>，能自動比對照片特徵點，在相機姿態未知的情況下同時解算出相機位置與稀疏點雲。<br>
+            • <strong>COLMAP</strong>：是常見的開源 SfM / MVS 工具。NeRF 與 3DGS 在處理真實照片時，皆使用 COLMAP 來預先計算相機姿態。
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(3)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-3">
+              <span class="tag-academic">原始文獻結論</span>
+              • 相機光線數學公式表示法：Mildenhall et al. (2021), Sec. 4, Eq. (1), p. 409。<br>
+              • 真實照片姿態估計採用 COLMAP 實作：Mildenhall et al. (2021), Sec. 5.3, p. 413；Kerbl et al. (2023), Sec. 4, p. 4。<br>
+              • 證據卡對應：<a href="../evidence/mildenhall2021-nerf.md#32-體積渲染機制連續積分與離散數值求積sec-4-p-409410" target="_blank">evidence/mildenhall2021-nerf.md</a>、<a href="../evidence/kerbl2023-3dgs.md#22-三大核心創新貢獻-sec-1-p-2" target="_blank">evidence/kerbl2023-3dgs.md</a>。<br>
+              • 概念對應：<a href="../wiki/foundations.md#2-為什麼需要多角度照片視差與三角測量" target="_blank">wiki/foundations.md Sec 2–4</a>、<a href="../wiki/glossary.md" target="_blank">wiki/glossary.md</a>（SfM vs COLMAP）。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 04: NeRF 的基本概念
+           ====================================================================== -->
+      <section class="slide" id="slide-4" data-index="4">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 04 / 12 • 新興演算法</div>
+            <h2 class="slide-title">神經輻射場（NeRF）：用神經網路記憶光影</h2>
+          </div>
+          <span class="slide-tag">連續隱式神經場</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            2020 年，Mildenhall 等人提出了<strong>神經輻射場（Neural Radiance Fields, NeRF）</strong>，徹底顛覆了傳統 3D 表徵：不存點雲、不存網格，而是<strong>將整個場景封裝進一個多層感知機（MLP）神經網路權重中</strong>。
+          </p>
+
+          <div class="grid-3" style="margin: 20px 0;">
+            <div class="card">
+              <div class="card-title">1. 連續 5D 隱式函數</div>
+              <p>輸入任意 3D 空間坐標 (x, y, z) 與 2D 觀察角度 (θ, φ)，神經網路直接輸出該點的<strong>體積密度 σ</strong>（像不透明霧氣）與<strong>視角相關顏色 (R, G, B)</strong>。</p>
+            </div>
+            <div class="card card-highlight">
+              <div class="card-title">2. 位置編碼（Positional Encoding）</div>
+              <p>神經網路天生有「光譜偏見（Spectral Bias）」，容易把畫面學成一團模糊平滑。NeRF 透過高頻正弦/餘弦函數投影，強迫神經網路記住<strong>銳利邊緣與微小細節</strong>！</p>
+            </div>
+            <div class="card">
+              <div class="card-title">3. 射線步進與體積渲染</div>
+              <p>從相機發射光線穿過像素，在光線上採樣數十個點，利用<strong>數值求積積分</strong>累加不透明度與顏色，計算出該像素的最終成色。</p>
+            </div>
+          </div>
+
+          <div class="visual-box">
+            <svg viewBox="0 0 750 160" width="750" height="160">
+              <!-- 相機 -->
+              <rect x="30" y="60" width="50" height="40" rx="3" fill="#eff6ff" stroke="#2563eb" stroke-width="2"></rect>
+              <text x="55" y="85" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">相機光心</text>
+              
+              <!-- 像素平面 -->
+              <line x1="120" y1="20" x2="120" y2="140" stroke="#94a3b8" stroke-width="2"></line>
+              <rect x="116" y="70" width="8" height="20" fill="#f59e0b"></rect>
+              <text x="120" y="155" text-anchor="middle" font-size="11" fill="#64748b">目標像素</text>
+
+              <!-- 射線 -->
+              <line x1="80" y1="80" x2="680" y2="80" stroke="#f59e0b" stroke-width="2"></line>
+
+              <!-- 採樣點 -->
+              <circle cx="200" cy="80" r="5" fill="#94a3b8"></circle>
+              <circle cx="280" cy="80" r="5" fill="#94a3b8"></circle>
+              <circle cx="360" cy="80" r="6" fill="#3b82f6"></circle>
+              <circle cx="410" cy="80" r="8" fill="#2563eb"></circle>
+              <circle cx="450" cy="80" r="10" fill="#1d4ed8"></circle>
+              <circle cx="510" cy="80" r="6" fill="#3b82f6"></circle>
+              <circle cx="600" cy="80" r="5" fill="#94a3b8"></circle>
+
+              <!-- 物體表面霧氣示意 -->
+              <ellipse cx="440" cy="80" rx="60" ry="40" fill="rgba(37, 99, 235, 0.15)" stroke="#2563eb" stroke-dasharray="4,4"></ellipse>
+              <text x="440" y="40" text-anchor="middle" font-size="12" font-weight="bold" fill="#2563eb">物體表面高密度區域 (σ 大)</text>
+
+              <!-- 求積說明 -->
+              <text x="680" y="85" font-size="12" fill="#475569">沿光線積分累加 C(r)</text>
+            </svg>
+            <div class="visual-caption">概念示意圖：NeRF 沿著相機射線步進採樣，透過體積渲染數值求積合成像素顏色</div>
+          </div>
+
+          <div class="callout callout-danger" style="margin-top: 10px;">
+            <strong>經典 NeRF 的最大致命傷：慢！</strong><br>
+            每渲染一張高解析度照片，就要發射數百萬條射線、呼叫神經網路數億次。在原始論文中，渲染一張 800×800 照片在單張 GPU 上需要<strong>約 30 秒（0.03 FPS）</strong>，完全無法進行即時互動展示。
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(4)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-4">
+              <span class="tag-academic">原始文獻結論</span>
+              • NeRF 5D 隱式輻射場定義與體積渲染離散求積公式：Mildenhall et al. (2021), Sec. 3–4, Eq. (3), p. 410。<br>
+              • 位置編碼公式（坐標 L=10, 視角 L=4）：Mildenhall et al. (2021), Sec. 5.1, Eq. (4), p. 411。<br>
+              • 粗採樣（64 點）與精細階層採樣（128 點）：Mildenhall et al. (2021), Sec. 5.2, p. 412。<br>
+              • 概念對應：<a href="../wiki/nerf.md" target="_blank">wiki/nerf.md</a>、<a href="../evidence/mildenhall2021-nerf.md" target="_blank">evidence/mildenhall2021-nerf.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 05: 3DGS 的基本概念
+           ====================================================================== -->
+      <section class="slide" id="slide-5" data-index="5">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 05 / 12 • 新興演算法</div>
+            <h2 class="slide-title">3D Gaussian Splatting：即時渲染的重大突破</h2>
+          </div>
+          <span class="slide-tag">顯式高斯與光柵化</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            2023 年，Kerbl 等人提出了 <strong>3D Gaussian Splatting（3DGS）</strong>。它放棄了查詢緩慢的神經網路黑盒子，改用<strong>數十萬至數百萬個微小的「顯式 3D 高斯橢球」</strong>來表徵世界，並結合 GPU 快速光柵化，實現<strong>每秒 100+ 幀的即時渲染</strong>！
+          </p>
+
+          <div class="grid-2" style="margin: 16px 0;">
+            <div class="card">
+              <div class="card-title" style="color: var(--primary);">1. 顯式 3D 高斯橢球（Explicit Gaussians）</div>
+              <p>每個高斯就像一顆可拉伸、旋轉的發光半透明水滴，擁有獨立的：</p>
+              <p>• <strong>中心坐標 x</strong>：在空間中的三維位置。</p>
+              <p>• <strong>協方差矩陣 Σ</strong>：決定橢球的大小與方向（分解為旋轉四元數 q 與三維縮放向量 s）。</p>
+              <p>• <strong>不透明度 α</strong> 與 <strong>球諧函數顏色（SH）</strong>：支援不同視角下的光澤反光。</p>
+            </div>
+
+            <div class="card card-highlight">
+              <div class="card-title" style="color: var(--secondary);">2. 自適應密度控制（Adaptive Control）</div>
+              <p>在最佳化過程中，演算法依據幾何梯度自動調節高斯分布：</p>
+              <p>• <strong>Clone（複製）</strong>：在欠重建的幾何邊緣，複製一顆相同高斯並稍微位移。</p>
+              <p>• <strong>Split（分裂）</strong>：在覆蓋太大的高方差區域，將一顆大高斯分裂為兩顆小高斯（縮小 1.6 倍）。</p>
+              <p>• <strong>修剪（Pruning）</strong>：刪除不透明度太低（α &lt; 0.005）的浮空雜點。</p>
+            </div>
+          </div>
+
+          <div class="callout callout-success">
+            <div class="callout-title">⚡ 為什麼 3DGS 渲染速度能達到 100+ FPS？</div>
+            <strong>GPU 分塊光柵化（Tile-based Rasterizer）</strong>：演算法將螢幕劃分為 16×16 像素的小區塊（Tiles），利用 GPU 的 Radix Sort 快速將高斯按深度排序，只有落在該區塊內的高斯才會被批次繪製，徹底避開了 NeRF 逐點神經網路推理的巨大運算瓶頸！
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(5)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-5">
+              <span class="tag-academic">原始文獻結論</span>
+              • 3D 高斯數學表徵與協方差矩陣分解公式（Σ = R S Sᵀ Rᵀ）：Kerbl et al. (2023), Sec. 4, Eq. (4)–(6), p. 4。<br>
+              • 自適應密度控制演算法（Clone/Split/Prune 與尺度因子 1.6）：Kerbl et al. (2023), Sec. 5.2, p. 5；Appendix B, Algorithm 1, p. 11。<br>
+              • 快速分塊光柵化機制（16×16 Tiles, Radix Sort）：Kerbl et al. (2023), Sec. 6, pp. 6–7。<br>
+              • 概念對應：<a href="../wiki/3dgs.md" target="_blank">wiki/3dgs.md</a>、<a href="../evidence/kerbl2023-3dgs.md" target="_blank">evidence/kerbl2023-3dgs.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 06: NeRF vs. 3DGS 互動對比
+           ====================================================================== -->
+      <section class="slide" id="slide-6" data-index="6">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 06 / 12 • 橫向評析</div>
+            <h2 class="slide-title">NeRF vs. 3DGS：核心特性互動切換比對</h2>
+          </div>
+          <span class="slide-tag">範式轉換與工程權衡</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            NeRF 與 3DGS 代表了兩種完全不同的工程設計哲學：<strong>「算力換時間（連續隱式）」vs.「空間換時間（離散顯式）」</strong>。點擊下方按鈕切換不同面向的深入對比：
+          </p>
+
+          <!-- 互動切換按鈕 -->
+          <div class="interactive-tabs">
+            <button class="tab-btn active" onclick="switchTab(this, 'tab-overview')">1. 核心綜合對比</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-speed')">2. 速度與硬體真相</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-storage')">3. 儲存與記憶體</button>
+            <button class="tab-btn" onclick="switchTab(this, 'tab-usecase')">4. 應用場景選擇</button>
+          </div>
+
+          <!-- Tab 1: 核心綜合對比 -->
+          <div class="tab-pane active" id="tab-overview">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title" style="color: var(--primary);">神經輻射場（NeRF）</div>
+                <p>• <strong>場景表徵</strong>：隱式連續函數（MLP 網路權重）</p>
+                <p>• <strong>渲染方式</strong>：沿相機光線採樣步進（體積積分）</p>
+                <p>• <strong>渲染幀率</strong>：~0.03 FPS（每張畫面約需 30 秒）</p>
+                <p>• <strong>訓練耗時</strong>：100k~300k 次迭代（約 1~2 天）</p>
+                <p>• <strong>模型大小</strong>：極小，MLP 權重僅約 <strong>5 MB</strong></p>
+              </div>
+
+              <div class="card card-highlight">
+                <div class="card-title" style="color: var(--secondary);">3D Gaussian Splatting（3DGS）</div>
+                <p>• <strong>場景表徵</strong>：顯式離散微元（數百萬顆 3D 高斯橢球）</p>
+                <p>• <strong>渲染方式</strong>：GPU 投影光柵化（Tile-based Splatting）</p>
+                <p>• <strong>渲染幀率</strong>：<strong>100+ FPS（支援即時互動）</strong></p>
+                <p>• <strong>訓練耗時</strong>：30k 步最佳化（僅需 <strong>25~45 分鐘</strong>）</p>
+                <p>• <strong>模型大小</strong>：較大，需儲存百萬點參數，約 <strong>數百 MB 至 1 GB</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: 速度與硬體真相 -->
+          <div class="tab-pane" id="tab-speed">
+            <div class="callout callout-warning">
+              <div class="callout-title">⚠️ 學術誠實性提醒：兩篇論文硬體與實驗條件不同，非絕對同等條件比較！</div>
+              • <strong>NeRF 論文條件</strong>：主要實驗在單張 <strong>NVIDIA V100 GPU</strong> 上執行，未採用現代 CUDA 加速網格哈希編碼。<br>
+              • <strong>3DGS 論文條件</strong>：主要實驗在高效能 <strong>NVIDIA A6000 GPU</strong> 上執行。3DGS 在 7k 步時已達 ~41 FPS，30k 步時達 ~134 FPS。<br>
+              • <strong>結論</strong>：3DGS 的即時突破來自於 GPU 光柵化管線的全新設計，但讀者不可忽略硬體世代與算力吞吐量的客觀差異。
+            </div>
+          </div>
+
+          <!-- Tab 3: 儲存與記憶體 -->
+          <div class="tab-pane" id="tab-storage">
+            <div class="card">
+              <div class="card-title">剖析 3DGS Table 1 中的「Mem」欄位</div>
+              <p>在 3DGS 原始論文 Table 1 中標示的「Mem（例如 734 MB 或 1.1 GB）」，原文定義為<strong>儲存最佳化後模型參數所需的記憶體量（Memory used to store optimized parameters）</strong>，<strong>並非指訓練階段的顯存峰值（Training VRAM）</strong>，亦不可直接推論為實際下載檔案大小。</p>
+              <div class="callout" style="margin: 10px 0 0 0; padding: 10px 14px; font-size: 0.88rem;">
+                <strong>💡 專案工程推論（非論文原始結論）</strong>：<br>
+                • <strong>NeRF</strong>：MLP 參數僅約 5 MB，傳輸負擔小，但客戶端每次旋轉視角皆需消耗龐大神經網路計算。<br>
+                • <strong>3DGS</strong>：高斯橢球點集渲染運算極輕量，但百萬點參數規模在實際網路傳輸與行動端部署時可能面臨頻寬與記憶體壓力。
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: 應用場景選擇 -->
+          <div class="tab-pane" id="tab-usecase">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">何時選擇 NeRF 衍生技術？</div>
+                <p>• 網路頻寬極度受限、無法傳輸數百 MB 檔案的環境。</p>
+                <p>• 需要對場景進行純隱式連續物理場模擬或極致壓縮儲存。</p>
+                <p>• 單純追求非即時的高保真離線渲染輸出。</p>
+              </div>
+              <div class="card card-highlight">
+                <div class="card-title">何時選擇 3DGS 技術？</div>
+                <p>• <strong>網頁端、VR/AR 需流暢 360° 即時互動檢視</strong>（二手電商展示首選）。</p>
+                <p>• 需要在 1 小時內快速完成訓練並預覽成果的商業流程。</p>
+                <p>• 後續需要對點集進行顯式編輯、修剪或與傳統圖學網格管線整合。</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(6)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-6">
+              <span class="tag-academic">原始文獻結論</span>
+              • NeRF 訓練耗時（V100 上 100k~300k 次迭代）與渲染耗時（約 30 秒/張）：Mildenhall et al. (2021), Sec. 6.2, p. 414。<br>
+              • 3DGS 訓練時間（25~45 分鐘，A6000 GPU）、幀率（134 FPS）與 Mem 參數儲存量：Kerbl et al. (2023), Table 1, p. 8；Sec. 7.2, p. 8。<br>
+              • 證據卡對應：<a href="../evidence/mildenhall2021-nerf.md#42-定量實驗數據table-1-p-414" target="_blank">evidence/mildenhall2021-nerf.md</a>、<a href="../evidence/kerbl2023-3dgs.md#42-核心定量評估數據table-1-p-8" target="_blank">evidence/kerbl2023-3dgs.md</a>。<br>
+              • 概念對應：<a href="../wiki/evaluation-comparison.md#1-nerf-vs-3dgs-表徵範式全方位對比" target="_blank">wiki/evaluation-comparison.md Sec 1</a>、<a href="../wiki/nerf.md#4-效能限制與資源消耗" target="_blank">wiki/nerf.md</a>、<a href="../wiki/3dgs.md#4-實驗數據硬體條件與定量基準" target="_blank">wiki/3dgs.md</a>。<br>
+              <span class="tag-extension">專案工程推論</span>
+              • 網路頻寬、客戶端解碼及儲存格式對於 NeRF 與 3DGS 部署之影響分析，為本專案延伸之工程推論，非論文原始實驗結論。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 07: ABO 與 Tanks and Temples 資料集
+           ====================================================================== -->
+      <section class="slide" id="slide-7" data-index="7">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 07 / 12 • 實證基準</div>
+            <h2 class="slide-title">常用資料集：真實世界資料與「真值」的邊界</h2>
+          </div>
+          <span class="slide-tag">電商商品 vs. 大場景雷射 GT</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            演算法的表現好壞，完全取決於評估資料集的品質。在 3D 重建領域，真實拍攝照片且擁有精確幾何「地面真值（Ground Truth）」的資料集非常罕見。
+          </p>
+
+          <div class="grid-2">
+            <!-- ABO 資料集 -->
+            <div class="card">
+              <div class="card-title" style="color: var(--primary);">
+                <span>1. ABO 資料集 (Collins et al., 2022)</span>
+              </div>
+              <p style="font-weight: 700; color: var(--text-main);">真實商品多模態資料庫（Amazon 合作）</p>
+              <p>• <strong>147,702</strong> 個商品 listings（涵蓋 576 種商品類型）</p>
+              <p>• <strong>398,212</strong> 張目錄展示照片（絕大多數無相機姿態）</p>
+              <p>• <strong>8,222</strong> 具有 360° 環物轉盤影像的商品</p>
+              <p>• <strong>7,953</strong> 個由專業 3D 建模人員手繪製作的 3D 網格（Artist-created Meshes，涵蓋 63 類）</p>
+              
+              <div class="callout callout-warning" style="margin: 10px 0 0 0; padding: 10px 12px; font-size: 0.85rem;">
+                <strong>⚠️ 重要邊界：CAD 網格 ≠ 物理掃描真值！</strong><br>
+                ABO 的 7,953 個模型是設計師手繪的全新良品 CAD 網格，<strong>並非對實體商品進行雷射掃描取得的物理真值</strong>，完全沒有二手磨損與刮痕標註。
+              </div>
+            </div>
+
+            <!-- Tanks and Temples 資料集 -->
+            <div class="card">
+              <div class="card-title" style="color: var(--secondary);">
+                <span>2. Tanks and Temples (Knapitsch et al., 2017)</span>
+              </div>
+              <p style="font-weight: 700; color: var(--text-main);">真實大場景工業級幾何評估基準</p>
+              <p>• <strong>場景規模</strong>：涵蓋 14 個測試場景（8 個中階、6 個高階）與 7 個訓練場景（如戰車、火車頭、噴泉、大型宮殿建築）。</p>
+              <p>• <strong>地面真值（Ground Truth）</strong>：使用工業級雷射掃描儀（<strong>FARO Focus 3D X330 HDR</strong>）獲取毫米級表面點雲真值！</p>
+              <p>• <strong>評估方式</strong>：真實視訊序列輸入，全面評估演算法端到端重建真實 3D 幾何的能力。</p>
+            </div>
+          </div>
+
+          <div class="card" style="background-color: var(--bg-card-alt); margin-top: 14px;">
+            <div class="card-title" style="font-size: 0.95rem;">📸 相機參數真相：真實照片 vs. 210 萬張合成渲染圖</div>
+            <p style="font-size: 0.88rem;">
+              初學者常誤以為資料集裡的照片全都有相機姿態。事實上，ABO 的近 40 萬張目錄照片中，僅有 <strong>6,334 張</strong>具有姿態標註，且這些標註是<strong>透過 3D 模型、實例遮罩與可微分渲染等程序估計後經人工確認而得，並非拍攝時直接記錄的相機姿態</strong>；而其 Benchmark 評估提供的 <strong>210 萬張（2.1 million）</strong>多角度照片，是由虛擬 3D 網格模型在 Blender Cycles 中路徑追蹤渲染而得的「合成照片」，不可與實體拍攝相片混為一談。
+            </p>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(7)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-7">
+              <span class="tag-academic">原始文獻結論</span>
+              • ABO 四項核心統計數據與相機姿態標註細節：Collins et al. (2022), Sec. 3, pp. 21128–21129。<br>
+              • Tanks and Temples 14 測試 + 7 訓練場景與 FARO 雷射規格：Knapitsch et al. (2017), Sec. 3 & 5, pp. 3–5。<br>
+              • 概念對應：<a href="../wiki/datasets.md" target="_blank">wiki/datasets.md</a>、<a href="../evidence/collins2022-abo.md" target="_blank">evidence/collins2022-abo.md</a>、<a href="../evidence/knapitsch2017-tanks-temples.md" target="_blank">evidence/knapitsch2017-tanks-temples.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 08: 2D 視覺品質評估（PSNR, SSIM, LPIPS）
+           ====================================================================== -->
+      <section class="slide" id="slide-8" data-index="8">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 08 / 12 • 品質評估第一維度</div>
+            <h2 class="slide-title">如何判斷影像的視覺品質？PSNR、SSIM 與 LPIPS</h2>
+          </div>
+          <span class="slide-tag">2D 影像三大客觀指標</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            在新視角合成任務中，我們要問：<strong>「渲染出來的照片，與真實相機在該視角拍到的真值照片有多像？」</strong> 學術界採用三大互補指標共同評斷：
+          </p>
+
+          <div class="grid-3" style="margin: 16px 0;">
+            <!-- PSNR -->
+            <div class="card">
+              <div class="card-title" style="color: var(--primary);">PSNR (峰值訊噪比)</div>
+              <p>• <strong>本質</strong>：像素級均方誤差（L₂ 距離）</p>
+              <p>• <strong>方向</strong>：<strong>越高越好（↑，單位 dB）</strong></p>
+              <p>• <strong>計算特性</strong>：以對數分貝度量訊號與均方誤差比值</p>
+              <p>• <strong>致命盲點</strong>：<strong>對輕微平移極端敏感</strong>。整張照片往右平移 1 個像素，人眼覺得沒變，PSNR 卻會大幅下降；但對於均勻微幅模糊，數值懲罰反而相對遲鈍。</p>
+            </div>
+
+            <!-- SSIM -->
+            <div class="card card-highlight">
+              <div class="card-title" style="color: var(--secondary);">SSIM (結構相似性)</div>
+              <p>• <strong>本質</strong>：衡量局部亮度、對比與邊緣結構</p>
+              <p>• <strong>方向</strong>：<strong>越高越好（↑，理論範圍 [-1, 1]）</strong></p>
+              <p>• <strong>計算特性</strong>：拆解為亮度、對比度與結構三大比較分量</p>
+              <p>• <strong>優勢與盲點</strong>：專注捕獲物體輪廓結構，邊緣模糊時扣分靈敏；但對整體微幅色彩偏差較為寬容。</p>
+            </div>
+
+            <!-- LPIPS -->
+            <div class="card">
+              <div class="card-title" style="color: var(--accent);">LPIPS (深度感知距離)</div>
+              <p>• <strong>本質</strong>：提取深度神經網路特徵計算感知差異</p>
+              <p>• <strong>方向</strong>：<strong>越低越好（↓，距離型指標）</strong></p>
+              <p>• <strong>計算特性</strong>：以卷積特徵圖通道正規化後之加權 L₂ 距離度量</p>
+              <p>• <strong>優勢與盲點</strong>：深度特徵在該研究實驗設定下展現與人類主觀評價高度契合的特性，對過度平滑化懲罰靈敏；但對微小幾何平移容忍度較高。</p>
+            </div>
+          </div>
+
+          <!-- 經典指標衝突案例 -->
+          <div class="card card-warning" style="margin-top: 14px;">
+            <div class="card-title" style="color: #92400e;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              真實案例：為什麼 NeRF 與 LLFF 會發生「指標排名衝突」？
+            </div>
+            <p style="font-size: 0.92rem; color: #78350f;">
+              在 NeRF 論文的 Real Forward-Facing 真實照片資料集中（Mildenhall et al., 2021, Table 1）：<br>
+              • <strong>LLFF</strong>：LPIPS <strong>0.212</strong>（優於 NeRF 的 0.250）—— 因為局部紋理對比強烈、邊緣銳利，深度感知指標更喜歡它！<br>
+              • <strong>NeRF</strong>：PSNR <strong>26.50 dB</strong>（遠高於 LLFF 的 24.13 dB），SSIM <strong>0.811</strong> 也勝出！<br>
+              • <strong>啟示</strong>：單張照片看 LLFF 感知更銳利；但串成影片看，LLFF 有嚴重的跳動條紋假影，而 NeRF 展現高度平滑的一致性。<strong>絕不能只迷信單一數據！</strong>
+            </p>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(8)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-8">
+              <span class="tag-academic">原始文獻結論</span>
+              • SSIM 三大分量與 MSSIM 公式（Eq. 6, 7, 9, 10, 13, 17）：Wang et al. (2004), pp. 603–605。<br>
+              • LPIPS 深度特徵距離公式 Eq. (1) 與 BAPPS 人類判斷數據：Zhang et al. (2018), p. 591。<br>
+              • Real Forward-Facing 指標排序衝突數據：Mildenhall et al. (2021), Table 1, p. 414。<br>
+              • 證據卡對應：<a href="../evidence/wang2004-ssim.md#32-三大比較函數公式-sec-iii-b-pp-603605" target="_blank">evidence/wang2004-ssim.md</a>、<a href="../evidence/zhang2018-lpips.md#32-核心數學公式-sec-3-eq-1-p-591" target="_blank">evidence/zhang2018-lpips.md</a>、<a href="../evidence/mildenhall2021-nerf.md#42-定量實驗數據table-1-p-414" target="_blank">evidence/mildenhall2021-nerf.md</a>。<br>
+              • 概念對應：<a href="../wiki/visual-quality.md" target="_blank">wiki/visual-quality.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 09: 3D 幾何品質評估（Precision, Recall, F-score）
+           ====================================================================== -->
+      <section class="slide" id="slide-9" data-index="9">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 09 / 12 • 品質評估第二維度</div>
+            <h2 class="slide-title">如何判斷 3D 幾何品質？Precision、Recall 與 F-score</h2>
+          </div>
+          <span class="slide-tag">3D 空間真實距離度量</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            離開 2D 照片，我們進入真實 3D 空間：<strong>「重建出來的 3D 模型表面，距離真實物體表面到底差了幾毫米？」</strong> 依據國際基準 Tanks and Temples（Knapitsch et al., 2017），評估建立在點對點最近鄰歐氏距離上：
+          </p>
+
+          <div class="grid-2" style="margin: 16px 0;">
+            <div class="card">
+              <div class="card-title" style="color: var(--primary);">1. 精確度（Precision / Accuracy）</div>
+              <p class="math-block" style="font-size:0.95rem; margin:6px 0;">P(d) = % of [重建點到真值表面距離 &lt; d]</p>
+              <p>• <strong>物理含義</strong>：重建出來的模型到底<strong>準不準、乾不乾淨</strong>？</p>
+              <p>• <strong>高 Precision</strong>：表面幾乎緊貼真值，沒有浮空雜點（Floaters）。</p>
+              <p>• <strong>盲點</strong>：<strong>無法發現破洞</strong>！若整台汽車只重建 10 個最準的螺絲釘點，Precision 照樣高達 99%！</p>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="color: var(--secondary);">2. 召回率（Recall / Completeness）</div>
+              <p class="math-block" style="font-size:0.95rem; margin:6px 0;">R(d) = % of [真值表面被重建點覆蓋 (距離 &lt; d)]</p>
+              <p>• <strong>物理含義</strong>：真實物體表面到底<strong>重現了百分之多少</strong>？</p>
+              <p>• <strong>高 Recall</strong>：表面結構完整，沒有遺漏零件或大面積破洞。</p>
+              <p>• <strong>盲點</strong>：<strong>無法發現噪點</strong>！若在全空間胡亂撒滿數億個雜點，Recall 照樣能高達 99%！</p>
+            </div>
+          </div>
+
+          <!-- 調和平均防作弊 -->
+          <div class="card card-highlight">
+            <div class="card-title" style="color: var(--primary);">
+              <span>🛡️ 調和平均 F-score：演算法的防作弊機制</span>
+              <span class="math-inline" style="font-size:1.1rem; font-weight:bold;">F(d) = 2 · P · R / (P + R)</span>
+            </div>
+            <p>
+              為什麼不直接把 Precision 和 Recall 加起來取平均？<br>
+              <strong>因為調和平均對極小值高度敏感</strong>：只要 Precision 或 Recall 其中任一項趨近於 0（極端保守稀疏撒點，或全空間盲目灌滿噪點），<strong>F-score 就會顯著降低並趨近於零</strong>！唯有在「精準」且「完整」時才能維持良好水準。
+            </p>
+          </div>
+
+          <!-- 距離門檻 Tau 的決定性 -->
+          <div class="callout callout-warning" style="margin-top: 14px;">
+            <div class="callout-title">⚠️ 黃金禁忌：不同距離門檻 τ 下的分數，絕對不可橫向直接比較！</div>
+            空間誤差是有絕對物理單位的。在 Tanks and Temples 中，不同場景依尺度設定了不同評估門檻：<br>
+            • 小型雕像（Family, Horse）：<strong>τ = 3 mm</strong>（極度嚴苛，偏離超過 3 毫米就算錯點）<br>
+            • 戰車火車頭（Francis, M60）：<strong>τ = 5 mm</strong><br>
+            • 巨型宮殿建築（Palace）：<strong>τ = 30 mm</strong>（允許 3 公分量測公差）<br>
+            <strong>在 3 mm 門檻下拿 50% F-score 的難度，遠遠高於在 30 mm 門檻下拿 70%！</strong>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(9)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-9">
+              <span class="tag-academic">原始文獻結論</span>
+              • 最近鄰歐氏距離與 Precision / Recall / F-score 數學公式：Knapitsch et al. (2017), Sec. 6, Eqs. (3)–(7), pp. 6–7。<br>
+              • 距離門檻 τ 跨場景設定表（Family 3mm vs Palace 30mm）：Knapitsch et al. (2017), Table 1, p. 7。<br>
+              • 概念對應：<a href="../wiki/geometric-quality.md" target="_blank">wiki/geometric-quality.md</a>、<a href="../evidence/knapitsch2017-tanks-temples.md" target="_blank">evidence/knapitsch2017-tanks-temples.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 10: 視覺 vs. 幾何互動比對（視覺逼真 ≠ 幾何正確）
+           ====================================================================== -->
+      <section class="slide" id="slide-10" data-index="10">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 10 / 12 • 核心思辨</div>
+            <h2 class="slide-title">視覺 vs. 幾何：為什麼「照片好看」不等於「形狀正確」？</h2>
+          </div>
+          <span class="slide-tag">視線累加與幾何崩壞</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            這是本課程<strong>最重要的一堂思辨課</strong>。許多跨領域評估者誤以為只要新視角渲染影片看起來平滑亮麗，就代表 3D 模型精確可靠——<strong>這在物理上完全是兩回事！</strong>
+          </p>
+
+          <!-- 互動切換展示 -->
+          <div class="card" style="margin: 16px 0; border: 2px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-weight:700; font-size:1.1rem;">🔍 互動模擬觀察：切換「2D 視角」與「3D 真實形狀」</span>
+              <div class="interactive-tabs" style="margin:0;">
+                <button class="tab-btn active" id="btn-view-2d" onclick="toggleSimView('2d')">2D 渲染畫面（看似完美）</button>
+                <button class="tab-btn" id="btn-view-3d" onclick="toggleSimView('3d')">3D 空間網格（揭露真相）</button>
+              </div>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-light); margin-bottom:12px; background:var(--bg-card-alt); padding:5px 10px; border-radius:4px; border:1px solid var(--border-light);">
+              📢 <strong>教學標註聲明</strong>：本互動展示之 PSNR、SSIM、LPIPS、Precision、Recall、F-score 數值均為<strong>專案教學示意數值</strong>，非原始論文實驗結果，亦非同一實測模型之實驗數據。
+            </div>
+
+            <!-- 模擬視圖 2D 狀態 -->
+            <div id="sim-view-2d" style="display:block;">
+              <div class="grid-2" style="align-items:center;">
+                <div class="visual-box" style="background:#f0fdf4; border-color:#86efac;">
+                  <svg viewBox="0 0 350 200" width="350" height="200">
+                    <rect x="50" y="30" width="250" height="140" rx="8" fill="#ffffff" stroke="#22c1c3" stroke-width="3"></rect>
+                    <circle cx="175" cy="100" r="45" fill="#fef08a" stroke="#ca8a04" stroke-width="2"></circle>
+                    <text x="175" y="105" text-anchor="middle" font-size="16" font-weight="bold" fill="#854d0e">極致逼真的茶壺</text>
+                    <text x="175" y="185" text-anchor="middle" font-size="12" fill="#16a34a">新視角渲染：光影連續、表面平滑無暇</text>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style="color:#16a34a; margin-bottom:8px;">✅ 2D 視覺評估指標（教學示意值）</h4>
+                  <p>• <strong>PSNR：32.5 dB</strong>（像素均方誤差極小）</p>
+                  <p>• <strong>SSIM：0.96</strong>（邊緣輪廓與對比極佳）</p>
+                  <p>• <strong>LPIPS：0.07</strong>（深度特徵感知距離超低）</p>
+                  <p style="color:var(--text-muted); font-size:0.9rem; margin-top:8px;">從正面看，這張照片與真實拍攝幾乎毫無差別！</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 模擬視圖 3D 狀態 -->
+            <div id="sim-view-3d" style="display:none;">
+              <div class="grid-2" style="align-items:center;">
+                <div class="visual-box" style="background:#fef2f2; border-color:#fca5a5;">
+                  <svg viewBox="0 0 350 200" width="350" height="200">
+                    <!-- 破裂網格 -->
+                    <path d="M 60 50 L 160 30 L 220 90 L 140 160 Z" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="3,3"></path>
+                    <path d="M 160 30 L 280 40 L 240 120 Z" fill="none" stroke="#dc2626" stroke-width="2"></path>
+                    <!-- 懸浮噪點 -->
+                    <circle cx="290" cy="80" r="4" fill="#ef4444"></circle>
+                    <circle cx="310" cy="110" r="6" fill="#ef4444"></circle>
+                    <circle cx="260" cy="150" r="5" fill="#ef4444"></circle>
+                    <!-- 背面大破洞 -->
+                    <ellipse cx="100" cy="120" rx="30" ry="20" fill="#fee2e2" stroke="#b91c1c" stroke-width="2"></ellipse>
+                    <text x="100" y="125" text-anchor="middle" font-size="12" font-weight="bold" fill="#b91c1c">盲區大破洞</text>
+                    <text x="175" y="185" text-anchor="middle" font-size="12" fill="#dc2626">真實 3D 幾何：形狀扭曲、懸浮彩霧、背面破洞</text>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style="color:#dc2626; margin-bottom:8px;">❌ 3D 幾何評估指標（教學示意值）</h4>
+                  <p>• <strong>Precision（準確度）：41.2%</strong>（空中飄著大量半透明彩霧雜點）</p>
+                  <p>• <strong>Recall（完整度）：38.5%</strong>（茶壺背面視角盲區完全破洞）</p>
+                  <p>• <strong>F-score (τ=3mm)：39.8%</strong>（幾何嚴重不合格！）</p>
+                  <p style="color:#b91c1c; font-size:0.9rem; margin-top:8px;">
+                    <strong>物理原理</strong>：2D 影像是由相機光線沿視線方向穿過 3D 空間時，綜合累加多個空間位置的體積密度與顏色貢獻合成而得。即使空間中存在半透明懸浮雜點或幾何錯位，只要沿射線累加的總體成色在外觀上接近真值，就能合成出高 PSNR 的 2D 照片，但背後真實的 3D 幾何形狀可能完全不可用！
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-danger">
+            <strong>專案警示紅線</strong>：NeRF（Mildenhall et al., 2021）與 3DGS（Kerbl et al., 2023）論文全文<strong>均未直接提供 Tanks and Temples 的 3D 幾何 F-score 驗證</strong>！評估者絕不能拿 PSNR 宣稱 3D 幾何精確無誤。
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(10)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-10">
+              <span class="tag-academic">學術與專案概念整合</span>
+              • NeRF 與 3DGS 原始論文之評估局限（僅以 2D 視覺 PSNR/SSIM/LPIPS 為主，無雷射 3D 幾何真值）：Mildenhall et al. (2021), Sec. 6；Kerbl et al. (2023), Table 1。<br>
+              • 幾何真值驗證協議來源：Knapitsch et al. (2017), Sec. 1 & 6。<br>
+              • 證據卡對應：<a href="../evidence/mildenhall2021-nerf.md#52-本專案延伸研究邊界明確標註需其他文獻支持" target="_blank">evidence/mildenhall2021-nerf.md</a>、<a href="../evidence/kerbl2023-3dgs.md#52-本專案延伸研究邊界明確標註" target="_blank">evidence/kerbl2023-3dgs.md</a>、<a href="../evidence/knapitsch2017-tanks-temples.md#1-文獻基本資訊與學術定位" target="_blank">evidence/knapitsch2017-tanks-temples.md</a>。<br>
+              • 概念對應：<a href="../wiki/evaluation-comparison.md#2-2d-視覺品質-vs-3d-幾何品質對照矩陣" target="_blank">wiki/evaluation-comparison.md Sec 2</a>、<a href="../wiki/visual-quality.md#8-防誤導紅線視覺逼真--幾何正確" target="_blank">wiki/visual-quality.md Sec 8</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 11: 二手商品刮痕與缺陷保留
+           ====================================================================== -->
+      <section class="slide" id="slide-11" data-index="11">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 11 / 12 • 落地應用挑戰</div>
+            <h2 class="slide-title">二手商品檢驗：刮痕會被演算法「自動美化」抹平嗎？</h2>
+          </div>
+          <span class="slide-tag">瑕疵保留與雙軌檢驗</span>
+        </div>
+        <div class="slide-body">
+          <p>
+            在二手名牌包、相機、手錶與手機交易中，買家最在乎<strong>實體表面的微小刮痕、碰撞磕痕與掉漆</strong>。但現有 3D 重建演算法卻面臨著致命的「美容陷阱」：
+          </p>
+
+          <div class="grid-2" style="margin: 16px 0;">
+            <div class="card card-warning">
+              <div class="card-title" style="color: #92400e;">1. 平滑化偏見：本專案提出的待驗證風險假說</div>
+              <p>為抑制噪訊並維持渲染流暢，常見重建程序（如正則化項、高斯尺度修剪或泊松曲面重建）在概念上存在將急遽局部起伏視為高頻噪聲的平滑傾向。<strong>需特別注意：此為本專案針對微小瑕疵檢驗提出的待驗證風險假說，不可斷言所有演算法必然抹除刮痕。</strong></p>
+            </div>
+
+            <div class="card card-danger">
+              <div class="card-title" style="color: #991b1b;">2. 門檻遮蔽與全域比例稀釋</div>
+              <p>• <strong>門檻遮蔽</strong>：若以 τ = 3 mm 門檻評估，深度僅 0.3 mm 的刮痕即使被抹平，幾何偏差仍落在 3 mm 容許誤差內被判定為合格點！<br>
+              • <strong>量級稀釋（教學示意）</strong>：刮痕在數百萬點雲中佔比低於 0.01%（專案教學假設數值），全域 F-score 依然能拿下 90%+ 示意高分。</p>
+            </div>
+          </div>
+
+          <!-- 互動案例剖析 -->
+          <div class="card" style="border: 2px solid var(--accent); margin-bottom: 14px;">
+            <div class="card-title" style="color: var(--accent);">
+              <span>📱 二手相機機身刮痕對照（教學模擬情境，數值為教學示意）</span>
+            </div>
+            <div class="grid-3" style="margin: 10px 0;">
+              <div class="card" style="background:#f8fafc;">
+                <div style="font-weight:700; color:var(--text-main);">維度一：2D 視覺品質</div>
+                <p style="color:#16a34a; font-weight:700;">PSNR 32 dB / SSIM 0.95</p>
+                <p style="font-size:0.85rem;">渲染畫面金屬光澤極佳、照片自然，但微觀刮痕被神經模糊消除。</p>
+                <div style="color:#dc2626; font-size:0.8rem; font-weight:bold;">⚠️ 買家收貨易起爭議</div>
+              </div>
+              <div class="card" style="background:#f8fafc;">
+                <div style="font-weight:700; color:var(--text-main);">維度二：全域幾何品質</div>
+                <p style="color:#2563eb; font-weight:700;">F-score (3mm) = 91.5%</p>
+                <p style="font-size:0.85rem;">機身宏觀形狀完整，且 0.3mm 深度落在 3mm 門檻容許公差內。</p>
+                <div style="color:#d97706; font-size:0.8rem; font-weight:bold;">⚠️ 宏觀合格掩蓋微觀瑕疵</div>
+              </div>
+              <div class="card" style="background:#f8fafc;">
+                <div style="font-weight:700; color:var(--text-main);">維度三：局部缺陷保留</div>
+                <p style="color:#dc2626; font-weight:700;">微觀深度殘差：檢驗失敗！</p>
+                <p style="font-size:0.85rem;">刮痕處表面法向量曲率無凹陷，演算法自動美化修掉了商品瑕疵。</p>
+                <div style="color:#16a34a; font-size:0.8rem; font-weight:bold;">✅ 這才是信任關鍵！</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-success">
+            <div class="callout-title">💡 本專案延伸主張：可信任二手 3D 模型「雙軌制檢驗框架」</div>
+            • <strong>第一軌：全域結構覆蓋度（Structural Coverage）</strong>：本專案提出之延伸評估概念，參考 Tanks and Temples 協定之宏觀覆蓋概念（候選示例門檻如 Recall &gt; 90%），確保背面、底座等盲區無大破洞。<br>
+            • <strong>第二軌：局部缺陷保留度（Local Defect Retention）</strong>：本專案提出之延伸評估概念，建議鎖定關鍵易損區域（ROI），採用次毫米級候選示例門檻（如 τ = 0.2 mm，非 Tanks 既定標準）檢驗實體刮痕深度殘差與法向量曲率變化。<br>
+            <em>（註：上述 Recall &gt; 90% 與 τ = 0.2 mm 均為本專案提出的候選示例門檻，尚未經機台實驗驗證，並非 Tanks and Temples 之既定標準）。</em>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(11)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-11">
+              <span class="tag-extension">專案延伸分析模型</span>
+              • 0.01% 點雲佔比與 90%+ 全域得分為專案設計之<strong>教學假設與示意數值</strong>，非 6 篇文獻實驗數據。<br>
+              • 結構覆蓋度（Structural Coverage）與局部缺陷保留（Local Defect Retention）為<strong>本專案提出之延伸評估概念</strong>，ROI 深度殘差檢驗尚未經過本機實測驗證。<br>
+              • 全域 Recall 基礎依據：Knapitsch et al. (2017)；電商全新品局限性依據：Collins et al. (2022)。<br>
+              • 證據卡對應：<a href="../evidence/knapitsch2017-tanks-temples.md#4-幾何評估協定與核心數學公式" target="_blank">evidence/knapitsch2017-tanks-temples.md</a>、<a href="../evidence/collins2022-abo.md#52-本專案延伸研究邊界明確標註" target="_blank">evidence/collins2022-abo.md</a>。<br>
+              • 概念對應：<a href="../wiki/completeness-and-defect-retention.md" target="_blank">wiki/completeness-and-defect-retention.md</a>、<a href="../wiki/secondhand-application.md" target="_blank">wiki/secondhand-application.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SLIDE 12: 綜合案例、總結與知識檢核
+           ====================================================================== -->
+      <section class="slide" id="slide-12" data-index="12">
+        <div class="slide-header">
+          <div>
+            <div class="slide-subtitle">Slide 12 / 12 • 總結與檢核</div>
+            <h2 class="slide-title">融會貫通：評估決策樹與隨堂互動測驗</h2>
+          </div>
+          <span class="slide-tag">自我檢視與知識溯源</span>
+        </div>
+        <div class="slide-body">
+          <!-- 決策樹總結 -->
+          <div class="card card-highlight" style="margin-bottom: 20px;">
+            <div class="card-title" style="color: var(--primary);">🌲 可信任 3D 模型評估四步決策樹</div>
+            <p>1. <strong>問應用目的</strong>：單純看美圖選新視角合成（3DGS）；工業製造或二手買賣必看 3D 幾何表面與局部瑕疵。</p>
+            <p>2. <strong>查 2D 視覺</strong>：多指標綜合檢驗（如檢視 PSNR、SSIM、LPIPS 是否具備良好保真度，此類門檻多為專案示意性篩選值，並非通用品質標準）？動態影片有無跳動閃爍？</p>
+            <p>3. <strong>查 3D 幾何</strong>：是否有實體雷射掃描真值？指定門檻 τ 是多少？F-score 是否同時兼顧 Precision 與 Recall？</p>
+            <p>4. <strong>查微觀瑕疵</strong>：背面與底座等盲區有無破洞？微小凹痕與刮痕是否具備真實幾何深度？</p>
+          </div>
+
+          <h3 style="margin: 20px 0 12px 0; font-size:1.15rem;">📝 隨堂觀念自我檢核（點擊選項即時作答）</h3>
+
+          <!-- 測驗題 1 -->
+          <div class="quiz-card" id="quiz-1">
+            <div class="quiz-question">Q1. 一個演算法在渲染影像時取得 PSNR 36 dB、SSIM 0.98 的極高分數，這是否代表其 3D 幾何形狀必定精準無誤？</div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer(1, 0, false)">A. 是的，2D 照片完全逼真，3D 空間形狀就一定完美無瑕。</div>
+              <div class="quiz-option" onclick="checkAnswer(1, 1, true)">B. 否，2D 投影為沿視線累加合成，空中可能飄著懸浮雜點，或背面存在盲區破洞。</div>
+              <div class="quiz-option" onclick="checkAnswer(1, 2, false)">C. 只要 LPIPS 也合格，就能 100% 保證幾何形狀精準。</div>
+            </div>
+            <div class="quiz-feedback" id="feedback-1"></div>
+          </div>
+
+          <!-- 測驗題 2 -->
+          <div class="quiz-card" id="quiz-2">
+            <div class="quiz-question">Q2. 在 3D 幾何品質評估中，若演算法在整個 3D 空間中盲目隨機灑出數億個密集雜點填滿空間，哪一項指標可能會產生「虛假的高分」？</div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer(2, 0, false)">A. 精確度（Precision）會變得極高。</div>
+              <div class="quiz-option" onclick="checkAnswer(2, 1, true)">B. 召回率（Recall）會虛高（因為真值表面附近都被雜點覆蓋了），但 Precision 與調和平均 F-score 會顯著降低並趨近於零。</div>
+              <div class="quiz-option" onclick="checkAnswer(2, 2, false)">C. F-score 會變得極高。</div>
+            </div>
+            <div class="quiz-feedback" id="feedback-2"></div>
+          </div>
+
+          <!-- 測驗題 3 -->
+          <div class="quiz-card" id="quiz-3">
+            <div class="quiz-question">Q3. 在 Tanks and Temples 基準測試中，可以將雕像場景在 3 mm 門檻下的 F-score，與宮殿建築在 30 mm 門檻下的得分直接橫向比較誰的演算法更好嗎？</div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer(3, 0, false)">A. 可以，只要都是 F-score 百分比就可以直接排名。</div>
+              <div class="quiz-option" onclick="checkAnswer(3, 1, true)">B. 絕對不行！3 mm 門檻的幾何公差遠比 30 mm 嚴苛十倍，不同門檻下的 F-score 不具可比性。</div>
+              <div class="quiz-option" onclick="checkAnswer(3, 2, false)">C. 只有在兩者都是室外場景時才可以比較。</div>
+            </div>
+            <div class="quiz-feedback" id="feedback-3"></div>
+          </div>
+
+          <!-- 來源抽屜 -->
+          <div class="source-drawer">
+            <button class="source-toggle" onclick="toggleSource(12)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+              知識來源與推論標籤
+            </button>
+            <div class="source-content" id="source-12">
+              <span class="tag-academic">綜合知識檢驗</span>
+              • Q1 依據：2D 視覺與 3D 幾何本質區別（Mildenhall et al., 2021；Knapitsch et al., 2017）。<br>
+              • Q2 依據：Precision/Recall 物理含義與調和平均防作弊機制（Knapitsch et al., 2017, Sec. 6）。<br>
+              • Q3 依據：距離門檻 τ 尺度相依性與跨場景比較禁忌（Knapitsch et al., 2017, Table 1）。<br>
+              • 證據卡對應：<a href="../evidence/mildenhall2021-nerf.md" target="_blank">evidence/mildenhall2021-nerf.md</a>、<a href="../evidence/kerbl2023-3dgs.md" target="_blank">evidence/kerbl2023-3dgs.md</a>、<a href="../evidence/collins2022-abo.md" target="_blank">evidence/collins2022-abo.md</a>、<a href="../evidence/wang2004-ssim.md" target="_blank">evidence/wang2004-ssim.md</a>、<a href="../evidence/zhang2018-lpips.md" target="_blank">evidence/zhang2018-lpips.md</a>、<a href="../evidence/knapitsch2017-tanks-temples.md" target="_blank">evidence/knapitsch2017-tanks-temples.md</a>。<br>
+              • 完整 Wiki 深度溯源：<a href="../wiki/index.md" target="_blank">wiki/index.md</a>、<a href="../wiki/evaluation-comparison.md" target="_blank">wiki/evaluation-comparison.md</a>、<a href="../wiki/glossary.md" target="_blank">wiki/glossary.md</a>。
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 底部導覽列 -->
+  <footer>
+    <div class="footer-info">
+      投影片 <span id="currentSlideNum">1</span> / <span id="totalSlideNum">12</span>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn" id="prevBtn" onclick="prevSlide()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        上一頁
+      </button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextSlide()">
+        下一頁
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 目錄彈窗 Modal -->
+  <div class="modal-overlay" id="tocModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📑 簡報章節目錄</h3>
+        <button class="close-btn" onclick="closeModal('tocModal')">&times;</button>
+      </div>
+      <div class="toc-list" id="tocList">
+        <!-- 由 JavaScript 動態生成目錄項目 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 快速鍵說明 Modal -->
+  <div class="modal-overlay" id="shortcutModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">⌨️ 鍵盤快速鍵導覽</h3>
+        <button class="close-btn" onclick="closeModal('shortcutModal')">&times;</button>
+      </div>
+      <div style="font-size: 0.95rem; line-height: 1.8;">
+        <p>• <strong>下一頁</strong>：<kbd>→</kbd>（右方向鍵） 或 <kbd>Space</kbd>（空白鍵） 或 <kbd>PageDown</kbd></p>
+        <p>• <strong>上一頁</strong>：<kbd>←</kbd>（左方向鍵） 或 <kbd>PageUp</kbd></p>
+        <p>• <strong>跳至第一頁</strong>：<kbd>Home</kbd></p>
+        <p>• <strong>跳至最後一頁</strong>：<kbd>End</kbd></p>
+        <p>• <strong>開啟 / 關閉目錄</strong>：<kbd>M</kbd> 或點擊右上角「目錄」按鈕</p>
+        <p>• <strong>關閉彈窗</strong>：<kbd>Esc</kbd></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       JavaScript 互動控制器（Vanilla JS，零外部相依）
+       ========================================================================== -->
+  <script>
+    // 簡報核心狀態
+    let currentSlide = 1;
+    const totalSlides = 12;
+
+    const slideTitles = [
+      "封面與學習地圖",
+      "3D 重建是什麼？從 2D 像素到 3D 空間",
+      "為什麼需要多視角？視差與三角測量",
+      "NeRF 的基本概念：連續隱式神經場",
+      "3DGS 的基本概念：顯式高斯與即時光柵化",
+      "NeRF vs. 3DGS 核心特性互動切換比對",
+      "常用資料集：ABO 與 Tanks and Temples",
+      "2D 視覺品質評估：PSNR、SSIM 與 LPIPS",
+      "3D 幾何品質評估：Precision、Recall 與 F-score",
+      "視覺 vs. 幾何互動比對：照片好看 ≠ 形狀正確",
+      "二手商品檢驗：微小刮痕與局部缺陷保留",
+      "綜合案例、評估決策樹與隨堂互動測驗"
+    ];
+
+    // 初始化
+    document.addEventListener("DOMContentLoaded", () => {
+      buildToc();
+      updateSlideView();
+
+      // 目錄按鈕
+      document.getElementById("tocBtn").addEventListener("click", () => {
+        document.getElementById("tocModal").classList.add("open");
+      });
+
+      // 快速鍵說明按鈕
+      document.getElementById("shortcutHelpBtn").addEventListener("click", () => {
+        document.getElementById("shortcutModal").classList.add("open");
+      });
+
+      // 點擊遮罩關閉 Modal
+      document.querySelectorAll(".modal-overlay").forEach(overlay => {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) {
+            overlay.classList.remove("open");
+          }
+        });
+      });
+
+      // 全域鍵盤事件監聽
+      document.addEventListener("keydown", handleKeyDown);
+    });
+
+    // 鍵盤導覽
+    function handleKeyDown(e) {
+      if (document.querySelector(".modal-overlay.open")) {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".modal-overlay").forEach(m => m.classList.remove("open"));
+        }
+        return;
+      }
+
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        goToSlide(1);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        goToSlide(totalSlides);
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        document.getElementById("tocModal").classList.toggle("open");
+      }
+    }
+
+    // 建立目錄項目
+    function buildToc() {
+      const tocList = document.getElementById("tocList");
+      tocList.innerHTML = "";
+      slideTitles.forEach((title, idx) => {
+        const item = document.createElement("div");
+        item.className = "toc-item" + (idx + 1 === currentSlide ? " current" : "");
+        item.innerHTML = `
+          <span><strong>Slide ${String(idx + 1).padStart(2, '0')}</strong> • ${title}</span>
+          <span style="font-size:0.8rem; color:var(--text-light);">前往 →</span>
+        `;
+        item.onclick = () => {
+          goToSlide(idx + 1);
+          closeModal("tocModal");
+        };
+        tocList.appendChild(item);
+      });
+    }
+
+    // 切換指定頁
+    function goToSlide(n) {
+      if (n >= 1 && n <= totalSlides) {
+        currentSlide = n;
+        updateSlideView();
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlideView();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlideView();
+      }
+    }
+
+    // 更新投影片顯示與狀態
+    function updateSlideView() {
+      document.querySelectorAll(".slide").forEach((s, idx) => {
+        if (idx + 1 === currentSlide) {
+          s.classList.add("active");
+        } else {
+          s.classList.remove("active");
+        }
+      });
+
+      // 頁碼與進度條
+      document.getElementById("currentSlideNum").innerText = currentSlide;
+      document.getElementById("totalSlideNum").innerText = totalSlides;
+      const progressPercent = ((currentSlide) / totalSlides) * 100;
+      document.getElementById("progress-bar").style.width = progressPercent + "%";
+
+      // 上下頁按鈕狀態
+      document.getElementById("prevBtn").disabled = (currentSlide === 1);
+      document.getElementById("nextBtn").disabled = (currentSlide === totalSlides);
+
+      // 更新目錄反白
+      document.querySelectorAll(".toc-item").forEach((item, idx) => {
+        if (idx + 1 === currentSlide) {
+          item.classList.add("current");
+        } else {
+          item.classList.remove("current");
+        }
+      });
+
+      // 捲動到頁面頂端
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+
+    // 資料來源抽屜開合
+    function toggleSource(slideNum) {
+      const content = document.getElementById(`source-${slideNum}`);
+      if (content) {
+        content.classList.toggle("open");
+      }
+    }
+
+    // Slide 6: NeRF vs 3DGS 標籤頁切換
+    function switchTab(btnElement, tabId) {
+      document.querySelectorAll("#slide-6 .tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll("#slide-6 .tab-pane").forEach(pane => pane.classList.remove("active"));
+      
+      if (btnElement) {
+        btnElement.classList.add("active");
+      }
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) {
+        targetPane.classList.add("active");
+      }
+    }
+
+    // Slide 10: 2D 畫面 vs 3D 空間形狀模擬切換
+    function toggleSimView(mode) {
+      const view2D = document.getElementById("sim-view-2d");
+      const view3D = document.getElementById("sim-view-3d");
+      const btn2D = document.getElementById("btn-view-2d");
+      const btn3D = document.getElementById("btn-view-3d");
+
+      if (mode === "2d") {
+        view2D.style.display = "block";
+        view3D.style.display = "none";
+        btn2D.classList.add("active");
+        btn3D.classList.remove("active");
+      } else {
+        view2D.style.display = "none";
+        view3D.style.display = "block";
+        btn2D.classList.remove("active");
+        btn3D.classList.add("active");
+      }
+    }
+
+    // Slide 12: 隨堂測驗答題判斷
+    const quizFeedbackData = {
+      1: {
+        correct: "🎉 答對了！2D 照片是沿相機光線穿過空間時多個位置密度與顏色貢獻的合成累積。即便空間中存在浮空雜點，或背面存在嚴重的未重建大破洞，只要沿射線累加的總體成色在外觀上接近真值，依然能渲染出 35+ dB 的美麗假象！",
+        wrong: "❌ 答錯囉！這是初學者最容易踩的坑。2D 照片好看『絕對不等於』3D 空間形狀正確。空中可能有浮空噪點，或者看不見的背面滿是破洞！"
+      },
+      2: {
+        correct: "🎉 答對了！Recall 測量的是『真值表面有多少比例被覆蓋』。全空間塞滿雜點時，真值表面周圍一定有雜點，Recall 虛高；但由於空中全是不正確的雜點，Precision 會趨近於 0，調和平均 F-score 也會顯著降低並趨近於零！",
+        wrong: "❌ 答錯囉！請記住：Precision 是『重建點中正確的比例』，全空間胡亂撒點會產生數億個空氣雜點，Precision 會趨近於 0，使 F-score 顯著降低！反而是 Recall（覆蓋率）會產生虛假的高分。"
+      },
+      3: {
+        correct: "🎉 答對了！Tanks and Temples 的距離門檻 τ 具有絕對物理單位（毫米）。雕像場景設 3 mm（偏離 3 毫米就算錯點），而宮殿設 30 mm（允許 3 公分量測公差）。不同門檻下的 F-score 絕不可直接比較排名！",
+        wrong: "❌ 答錯囉！距離門檻 τ 是幾何精確度的生死線。3 mm 門檻比 30 mm 嚴苛十倍，不同門檻下的 F-score 絕對不可直接橫向比較！"
+      }
+    };
+
+    function checkAnswer(qNum, optIdx, isCorrect) {
+      const card = document.getElementById(`quiz-${qNum}`);
+      const options = card.querySelectorAll(".quiz-option");
+      const feedback = document.getElementById(`feedback-${qNum}`);
+
+      // 鎖定選項
+      options.forEach((opt, idx) => {
+        opt.style.pointerEvents = "none";
+        if (idx === optIdx) {
+          opt.classList.add(isCorrect ? "correct" : "wrong");
+        }
+      });
+
+      // 顯示反饋
+      feedback.className = `quiz-feedback show ${isCorrect ? 'callout-success' : 'callout-danger'}`;
+      feedback.style.display = "block";
+      feedback.innerHTML = isCorrect ? quizFeedbackData[qNum].correct : quizFeedbackData[qNum].wrong;
+    }
+  </script>
+</body>
+</html>
